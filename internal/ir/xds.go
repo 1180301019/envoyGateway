@@ -1124,7 +1124,8 @@ type EnvoyPatchPolicy struct {
 	EnvoyPatchPolicyStatus
 	// JSONPatches are the JSON Patches that
 	// are to be applied to generated Xds linked to the gateway.
-	JSONPatches []*JSONPatchConfig `json:"jsonPatches,omitempty" yaml:"jsonPatches,omitempty"`
+	JSONPatches     []*JSONPatchConfig `json:"jsonPatches,omitempty" yaml:"jsonPatches,omitempty"`
+	TargetHttpRoute string
 }
 
 // EnvoyPatchPolicyStatus defines the status reference for the EnvoyPatchPolicy resource

@@ -7,6 +7,7 @@ package translator
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -41,12 +42,15 @@ func processJSONPatches(tCtx *types.ResourceVersionTable, envoyPatchPolicies []*
 		e := e
 		for _, p := range e.JSONPatches {
 			var (
-				listener     *listenerv3.Listener
-				routeConfig  *routev3.RouteConfiguration
-				cluster      *clusterv3.Cluster
-				endpoint     *endpointv3.ClusterLoadAssignment
-				resourceJSON []byte
-				err          error
+				listener         *listenerv3.Listener
+				routeConfig      *routev3.RouteConfiguration
+				cluster          *clusterv3.Cluster
+				endpoint         *endpointv3.ClusterLoadAssignment
+				resourceJSON     []byte
+				targetHostOrder  int
+				targetRouteOrder int
+				routeIsFinded    bool
+				err              error
 			)
 
 			// If Path is "" and op is "add", unmarshal and add the patch as a complete
@@ -146,6 +150,28 @@ func processJSONPatches(tCtx *types.ResourceVersionTable, envoyPatchPolicies []*
 					continue
 				}
 
+				if e.TargetHttpRoute != "" {
+					for hostIndex, host := range routeConfig.VirtualHosts {
+						if routeIsFinded {
+							break
+						}
+						for routeIndex, route := range host.Routes {
+							if route.Name == e.TargetHttpRoute {
+								targetHostOrder = hostIndex
+								targetRouteOrder = routeIndex
+								routeIsFinded = true
+								break
+							}
+						}
+					}
+
+					if !routeIsFinded {
+						err := fmt.Sprintf("unable to find target httproute %s", e.TargetHttpRoute)
+						status.SetEnvoyPatchPolicyResourceNotFound(e.Status, err)
+						continue
+					}
+				}
+
 				if resourceJSON, err = m.Marshal(routeConfig); err != nil {
 					err = fmt.Errorf("unable to marshal xds resource %s: %s, err: %w", p.Type, p.Name, err)
 					errs = multierror.Append(errs, err)
@@ -179,6 +205,11 @@ func processJSONPatches(tCtx *types.ResourceVersionTable, envoyPatchPolicies []*
 
 			// Convert patch to JSON
 			// The patch library expects an array so convert it into one
+			if e.TargetHttpRoute != "" && routeIsFinded {
+				p.Operation.Path = "/virtual_hosts/" + strconv.Itoa(targetHostOrder) +
+					"/routes/" + strconv.Itoa(targetRouteOrder) + p.Operation.Path
+			}
+
 			y, err := yaml.Marshal([]ir.JSONPatchOperation{p.Operation})
 			if err != nil {
 				msg := fmt.Sprintf("unable to marshal patch %+v, err: %s", p.Operation, err.Error())

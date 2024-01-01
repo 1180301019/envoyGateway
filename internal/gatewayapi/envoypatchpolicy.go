@@ -8,6 +8,7 @@ package gatewayapi
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -28,19 +29,32 @@ func (t *Translator) ProcessEnvoyPatchPolicies(envoyPatchPolicies []*egv1a1.Envo
 	for _, policy := range envoyPatchPolicies {
 		policy := policy.DeepCopy()
 		targetNs := policy.Spec.TargetRef.Namespace
-		targetKind := KindGateway
+		targetKind := make(map[string]bool)
+		targetKind[KindGateway] = true
+		targetKind[KindHTTPRoute] = true
 
 		// If empty, default to namespace of policy
 		if targetNs == nil {
 			targetNs = ptr.To(gwv1b1.Namespace(policy.Namespace))
 		}
 
-		// Get the IR
-		// It must exist since the gateways have already been processed
-		irKey := irStringKey(string(*targetNs), string(policy.Spec.TargetRef.Name))
-		if t.MergeGateways {
-			irKey = string(t.GatewayClassName)
-			targetKind = KindGatewayClass
+		irKey := ""
+		httpRouteNameIfPossible := ""
+		if policy.Spec.TargetRef.Kind == KindHTTPRoute {
+			parts := strings.Split(string(policy.Spec.TargetRef.Name), "/")
+			if len(parts) > 2 {
+				irKey = irStringKey(string(parts[0]), parts[1])
+				httpRouteNameIfPossible = parts[2]
+			}
+		} else {
+			// Get the IR
+			// It must exist since the gateways have already been processed
+			irKey = irStringKey(string(*targetNs), string(policy.Spec.TargetRef.Name))
+			if t.MergeGateways {
+				irKey = string(t.GatewayClassName)
+				delete(targetKind, KindGateway)
+				targetKind[KindGatewayClass] = true
+			}
 		}
 
 		gwXdsIR, ok := xdsIR[irKey]
@@ -48,7 +62,7 @@ func (t *Translator) ProcessEnvoyPatchPolicies(envoyPatchPolicies []*egv1a1.Envo
 			// This status condition will not get updated in the resource because
 			// the IR is missing, but it has been kept here in case we publish
 			// the status from this layer instead of the xds layer.
-			message := fmt.Sprintf("%s:%s not found.", targetKind, policy.Spec.TargetRef.Name)
+			message := fmt.Sprintf("%s:%s not found.", policy.Spec.TargetRef.Kind, policy.Spec.TargetRef.Name)
 
 			status.SetEnvoyPatchPolicyCondition(policy,
 				gwv1a2.PolicyConditionAccepted,
@@ -64,12 +78,13 @@ func (t *Translator) ProcessEnvoyPatchPolicies(envoyPatchPolicies []*egv1a1.Envo
 		policyIR.Name = policy.Name
 		policyIR.Namespace = policy.Namespace
 		policyIR.Status = &policy.Status
+		policyIR.TargetHttpRoute = httpRouteNameIfPossible
 
 		// Append the IR
 		gwXdsIR.EnvoyPatchPolicies = append(gwXdsIR.EnvoyPatchPolicies, &policyIR)
-		if policy.Spec.TargetRef.Group != gwv1b1.GroupName || string(policy.Spec.TargetRef.Kind) != targetKind {
+		if policy.Spec.TargetRef.Group != gwv1b1.GroupName || !targetKind[string(policy.Spec.TargetRef.Kind)] {
 			message := fmt.Sprintf("TargetRef.Group:%s TargetRef.Kind:%s, only TargetRef.Group:%s and TargetRef.Kind:%s is supported.",
-				policy.Spec.TargetRef.Group, policy.Spec.TargetRef.Kind, gwv1b1.GroupName, targetKind)
+				policy.Spec.TargetRef.Group, policy.Spec.TargetRef.Kind, gwv1b1.GroupName, mapKeysToString(targetKind))
 
 			status.SetEnvoyPatchPolicyCondition(policy,
 				gwv1a2.PolicyConditionAccepted,
@@ -83,7 +98,7 @@ func (t *Translator) ProcessEnvoyPatchPolicies(envoyPatchPolicies []*egv1a1.Envo
 		// Ensure Policy and target Gateway are in the same namespace
 		if policy.Namespace != string(*targetNs) {
 			message := fmt.Sprintf("Namespace:%s TargetRef.Namespace:%s, EnvoyPatchPolicy can only target a %s in the same namespace.",
-				policy.Namespace, *targetNs, targetKind)
+				policy.Namespace, *targetNs, policy.Spec.TargetRef.Kind)
 
 			status.SetEnvoyPatchPolicyCondition(policy,
 				gwv1a2.PolicyConditionAccepted,
@@ -111,7 +126,15 @@ func (t *Translator) ProcessEnvoyPatchPolicies(envoyPatchPolicies []*egv1a1.Envo
 			gwv1a2.PolicyConditionAccepted,
 			metav1.ConditionTrue,
 			gwv1a2.PolicyReasonAccepted,
-			"EnvoyPatchPolicy has been accepted.",
+			"EnvoyPatchPolicy has been accepted.--------dev--------",
 		)
 	}
+}
+
+func mapKeysToString(m map[string]bool) string {
+	var keys []string
+	for key := range m {
+		keys = append(keys, key)
+	}
+	return strings.Join(keys, ", ")
 }
