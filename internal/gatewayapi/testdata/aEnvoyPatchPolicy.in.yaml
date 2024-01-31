@@ -1,0 +1,129 @@
+envoyPatchPolicies:
+  - apiVersion: gateway.envoyproxy.io/v1alpha1
+    kind: EnvoyPatchPolicy
+    metadata:
+      namespace: envoy-gateway-system
+      name: edit-conn-buffer-bytes-1
+    spec:
+      type: "JSONPatch"
+      targetRef:
+        group: gateway.networking.k8s.io
+        kind: Gateway
+        name: gateway-1
+        namespace: envoy-gateway-system
+      jsonPatches:
+        - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
+          name: "envoy-gateway-gateway-1-http"
+          operation:
+            op: replace
+            path: "/per_connection_buffer_limit_bytes"
+            value: "1024"
+  - apiVersion: gateway.envoyproxy.io/v1alpha1
+    kind: EnvoyPatchPolicy
+    metadata:
+      namespace: default
+      name: edit-conn-buffer-bytes-2
+    spec:
+      type: "JSONPatch"
+      targetRef:
+        group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        name: envoy-gateway-system/gateway-1/httproute-1
+        namespace: default
+      jsonPatches:
+        - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+          #RouteConfiguration name, Usually, it is the same as the corresponding listener's name
+          name: "first-listener"
+          operation:
+            op: "add"
+            path: /typed_per_filter_config
+            value:
+              "envoy_filters_http_cors":
+                "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+                allow_credentials: true
+  - apiVersion: gateway.envoyproxy.io/v1alpha1
+    kind: EnvoyPatchPolicy
+    metadata:
+      namespace: envoy-gateway-2
+      name: edit-conn-buffer-bytes
+    spec:
+      type: "JSONPatch"
+      targetRef:
+        group: gateway.networking.k8s.io
+        kind: GatewayClass
+        name: gateway-1
+        namespace: envoy-gateway-system
+      jsonPatches:
+        - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
+          name: "envoy-gateway-gateway-1-http"
+          operation:
+            op: replace
+            path: "/per_connection_buffer_limit_bytes"
+            value: "1024"
+  - apiVersion: gateway.envoyproxy.io/v1alpha1
+    kind: EnvoyPatchPolicy
+    metadata:
+      namespace: envoy-gateway-system
+      name: edit-conn-buffer-bytes-1
+    spec:
+      type: "JSONPatch"
+      targetRef:
+        group: gateway.networking.k8s.io
+        kind: GRPCRoute
+        name: gateway-1
+        namespace: envoy-gateway-system
+      jsonPatches:
+        - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
+          name: "envoy-gateway-gateway-1-http"
+          operation:
+            op: replace
+            path: "/per_connection_buffer_limit_bytes"
+            value: "1024"
+gateways:
+  - apiVersion: gateway.networking.k8s.io/v1
+    kind: Gateway
+    metadata:
+      namespace: envoy-gateway-system
+      name: gateway-1
+    spec:
+      gatewayClassName: envoy-gateway-class
+      listeners:
+        - name: http
+          protocol: HTTP
+          port: 80
+          allowedRoutes:
+            namespaces:
+              from: All
+httpRoutes:
+  - apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    metadata:
+      namespace: default
+      name: httproute-1
+    spec:
+      parentRefs:
+        - namespace: envoy-gateway
+          name: gateway-1
+      rules:
+        - matches:
+            - path:
+                value: "/"
+          backendRefs:
+            - name: service-1
+              port: 8080
+  - apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    metadata:
+      namespace: default
+      name: httproute-2
+    spec:
+      parentRefs:
+        - namespace: envoy-gateway
+          name: gateway-1
+      rules:
+        - matches:
+            - path:
+                value: "/get"
+          backendRefs:
+            - name: service-2
+              port: 8080

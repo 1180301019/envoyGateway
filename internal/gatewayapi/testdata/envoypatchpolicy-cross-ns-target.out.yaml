@@ -61,7 +61,8 @@ xdsIR:
       text:
       - path: /dev/stdout
     envoyPatchPolicies:
-    - name: edit-conn-buffer-bytes
+    - TargetHttpRoute: ""
+      name: edit-conn-buffer-bytes
       namespace: envoy-gateway-2
       status:
         conditions:

@@ -71,7 +71,8 @@ xdsIR:
       text:
       - path: /dev/stdout
     envoyPatchPolicies:
-    - jsonPatches:
+    - TargetHttpRoute: ""
+      jsonPatches:
       - name: envoy-gateway-gateway-1-http
         operation:
           op: replace
@@ -83,11 +84,12 @@ xdsIR:
       status:
         conditions:
         - lastTransitionTime: null
-          message: EnvoyPatchPolicy has been accepted.
+          message: EnvoyPatchPolicy has been accepted.--------dev--------
           reason: Accepted
           status: "True"
           type: Accepted
-    - jsonPatches:
+    - TargetHttpRoute: ""
+      jsonPatches:
       - name: envoy-gateway-gateway-1-http
         operation:
           op: replace
@@ -99,7 +101,7 @@ xdsIR:
       status:
         conditions:
         - lastTransitionTime: null
-          message: EnvoyPatchPolicy has been accepted.
+          message: EnvoyPatchPolicy has been accepted.--------dev--------
           reason: Accepted
           status: "True"
           type: Accepted

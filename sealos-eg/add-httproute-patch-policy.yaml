@@ -1,0 +1,30 @@
+envoyPatchPolicies:
+  - status: {}
+    name: "first-policy"
+    namespace: "default"
+    TargetHttpRoute: "first-route"
+    jsonPatches:
+      - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+        #RouteConfiguration name, Usually, it is the same as the corresponding listener's name
+        name: "first-listener"
+        operation:
+          op: "add"
+          path: /typed_per_filter_config
+          value:
+            "envoy_filters_http_cors":
+              "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+              allow_credentials: true
+      - status: { }
+        name: "first-policy"
+        namespace: "default"
+        jsonPatches:
+          - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+            #RouteConfiguration name, Usually, it is the same as the corresponding listener's name
+            name: "first-listener"
+            operation:
+              op: "add"
+              path: virtual_hosts/0/routes/1/typed_per_filter_config
+              value:
+                "envoy_filters_http_cors":
+                  "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+                  allow_credentials: true

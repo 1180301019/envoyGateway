@@ -1,0 +1,164 @@
+#musthave
+
+# max_request_header的filter
+#apiVersion: gateway.envoyproxy.io/v1alpha1
+#kind: EnvoyPatchPolicy
+#metadata:
+#  name: custom-maxheader-patch-policy
+#  namespace: sealos-system
+#spec:
+#  targetRef:
+#    group: gateway.networking.k8s.io
+#    kind: GatewayClass
+#    name: eg
+#    namespace: sealos-system
+#  type: JSONPatch
+#  jsonPatches:
+#    - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
+#      # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
+#      name: "sealos-system/eg/http"
+#      operation:
+#        op: "add"
+#        path: "/default_filter_chain/filters/0/typed_config/max_request_headers_kb"
+#        value: 8192
+#---
+# x-real-ip
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyPatchPolicy
+metadata:
+  name: custom-x-real-ip-patch-policy
+  namespace: sealos-system
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: GatewayClass
+    name: eg
+    namespace: sealos-system
+  type: JSONPatch
+  jsonPatches:
+    - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+      name: sealos-system/eg/http    #route configuration的名字，通常对应其listener的名字
+      operation:
+        op: "add"
+        path: "/request_headers_to_add"
+        value:
+          - header:
+              key: "x-real-ip"
+              value: "%REQ(X-ENVOY-EXTERNAL-ADDRESS)%"
+#---
+## default compressor(L2)
+#apiVersion: gateway.envoyproxy.io/v1alpha1
+#kind: EnvoyPatchPolicy
+#metadata:
+#  name: custom-compressor-patch-policy
+#  namespace: sealos-system
+#spec:
+#  targetRef:
+#    group: gateway.networking.k8s.io
+#    kind: GatewayClass
+#    name: eg
+#    namespace: sealos-system
+#  type: JSONPatch
+#  jsonPatches:
+#    - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
+#      name: sealos-system/eg/http
+#      operation:
+#        op: "add"
+#        path: "/default_filter_chain/filters/0/typed_config/http_filters/-"
+#        value:
+#          name: envoy.filters.http.compressor
+#          typed_config:
+#            "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
+#            compressor_library:
+#              name: text_optimized
+#              typed_config:
+#                "@type": type.googleapis.com/envoy.extensions.compression.gzip.compressor.v3.Gzip
+#                compression_level: DEFAULT_COMPRESSION
+#                compression_strategy: DEFAULT_STRATEGY
+#                memory_level: 3
+#                window_bits: 10
+#            request_direction_config:
+#              common_config:
+#                enabled:
+#                  default_value: false
+#                  runtime_key: request_compressor_enabled
+#            response_direction_config:
+#              common_config:
+#                content_type:
+#                  - text/html
+#                  - application/json
+#                  - application/javascript
+#                  - application/x-javascript
+#                  - application/xhtml+xml
+#                  - image/svg+xml
+#                  - text/css
+#                  - text/javascript
+#                  - text/plain
+#                  - text/xml
+#                  - application/octet-stream
+#                  - font/ttf
+#                  - font/otf
+#                  - font/eot
+#                min_content_length: 1024
+#              disable_on_etag_header: false
+#---
+##csp 用户自行按需配置
+#apiVersion: gateway.networking.k8s.io/v1
+#kind: HTTPRoute
+#metadata:
+#  name: sealos-desktop
+#  namespace: sealos
+#spec:
+#  parentRefs:
+#    - group: gateway.networking.k8s.io
+#      kind: Gateway
+#      name: eg
+#      sectionName: https
+#      namespace: sealos-system
+#    - group: gateway.networking.k8s.io
+#      kind: Gateway
+#      name: eg
+#      sectionName: http
+#      namespace: sealos-system
+#  hostnames:
+#    - "192.168.0.15.nip.io"
+#  rules:
+#    - backendRefs:
+#        - group: ""
+#          kind: Service
+#          name: desktop-frontend
+#          port: 3000
+#          weight: 1
+#      matches:
+#        - path:
+#            type: PathPrefix
+#            value: /get
+#      filters:
+#        - type: ResponseHeaderModifier
+#          responseHeaderModifier:
+#            add:
+#              - name: "X-Xss-Protection"
+#                value: "1; mode=block"
+#              - name: "Content-Security-Policy"
+#                value: "test"
+#        - type: ResponseHeaderModifier
+#          responseHeaderModifier:
+#            remove:
+#              - "X-Xss-Protection"
+#
+#---
+##Circuit Breakers
+#apiVersion: gateway.envoyproxy.io/v1alpha1
+#kind: BackendTrafficPolicy
+#metadata:
+#  name: circuitbreaker-for-route
+#spec:
+#  targetRef:
+#    group: gateway.networking.k8s.io
+#    kind: Gateway
+#    name: eg
+#    namespace: default
+#  circuitBreaker:
+#    maxConnections: 1024
+#    maxPendingRequests: 1024
+#    maxParallelRequests: 1024

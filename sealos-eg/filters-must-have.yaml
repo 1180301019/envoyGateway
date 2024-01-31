@@ -1,0 +1,190 @@
+#musthave
+#this is a template file, if you want to config filters belows,
+#You can refer to the configuration method below.
+
+# max_request_header
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyPatchPolicy
+metadata:
+  name: custom-maxheader-patch-policy
+  namespace: default
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+    namespace: default
+  type: JSONPatch
+  jsonPatches:
+    - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
+      # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
+      name: default/eg/http
+      operation:
+        op: "add"
+        path: "/default_filter_chain/filters/0/typed_config/max_request_headers_kb"
+        value: 8192
+---
+# x-real-ip
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyPatchPolicy
+metadata:
+  name: custom-x-real-ip-patch-policy
+  namespace: default
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+    namespace: default
+  type: JSONPatch
+  jsonPatches:
+    - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+      #name of route configuration, usually the same as the name of the corresponding listener.
+      name: default/eg/http
+      operation:
+        op: "add"
+        path: "/request_headers_to_add"
+        value:
+          - header:
+              key: "x-real-ip"
+              value: "%REQ(X-ENVOY-EXTERNAL-ADDRESS)%"
+---
+# default compressor(L2)
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyPatchPolicy
+metadata:
+  name: custom-compressor-patch-policy
+  namespace: default
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+    namespace: default
+  type: JSONPatch
+  jsonPatches:
+    - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
+      name: default/eg/http
+      operation:
+        op: "add"
+        path: "/default_filter_chain/filters/0/typed_config/http_filters/-"
+        value:
+          name: envoy.filters.http.compressor
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
+            compressor_library:
+              name: text_optimized
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.compression.gzip.compressor.v3.Gzip
+                compression_level: DEFAULT_COMPRESSION
+                compression_strategy: DEFAULT_STRATEGY
+                memory_level: 3
+                window_bits: 10
+            request_direction_config:
+              common_config:
+                enabled:
+                  default_value: false
+                  runtime_key: request_compressor_enabled
+            response_direction_config:
+              common_config:
+                content_type:
+                  - text/html
+                  - application/json
+                  - application/javascript
+                  - application/x-javascript
+                  - application/xhtml+xml
+                  - image/svg+xml
+                  - text/css
+                  - text/javascript
+                  - text/plain
+                  - text/xml
+                  - application/octet-stream
+                  - font/ttf
+                  - font/otf
+                  - font/eot
+                min_content_length: 1024
+              disable_on_etag_header: false
+---
+#csp     apply to listener
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyPatchPolicy
+metadata:
+  name: custom-csp-patch-policy
+  namespace: default
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+    namespace: default
+  type: JSONPatch
+  jsonPatches:
+    - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+      #name of route configuration, usually the same as the name of the corresponding listener.
+      name: default/eg/http
+      operation:
+        op: "add"
+        path: "/response_headers_to_add"
+        value:
+          - header:
+              key: "X-Xss-Protection"
+              value: "1; mode=block"
+          - header:
+              key: "Content-Security-Policy"
+              value: "default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com https://js.stripe.com; frame-src 'self' *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com https://js.stripe.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+    - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+      name: default/eg/http    #route configuration的名字，通常对应其listener的名字
+      operation:
+        op: "add"
+        path: "/response_headers_to_remove"
+        value:
+          - "X-Frame-Options"
+
+---
+#csp   apply to single route
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: backend
+spec:
+  parentRefs:
+    - name: eg
+  hostnames:
+    - "www.example.com"
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: backend
+          port: 3000
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            add:
+              - name: "X-Xss-Protection"
+                value: "1; mode=block"
+              - name: "Content-Security-Policy"
+                value: "test"
+            remove:
+              - "X-Frame-Options"
+---
+#Circuit Breakers
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: circuitbreaker-for-route
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg0p
+    namespace: default
+  circuitBreaker:
+    maxConnections: 1024
+    maxPendingRequests: 1024
+    maxParallelRequests: 1024
