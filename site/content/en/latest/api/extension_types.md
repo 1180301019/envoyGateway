@@ -1306,6 +1306,7 @@ _Appears in:_
 
 | Field | Description |
 | --- | --- |
+| `patch` _[KubernetesPatchSpec](#kubernetespatchspec)_ | Patch defines how to perform the patch operation to deployment |
 | `replicas` _integer_ | Replicas is the number of desired pods. Defaults to 1. |
 | `strategy` _[DeploymentStrategy](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#deploymentstrategy-v1-apps)_ | The deployment strategy to use to replace existing pods with new ones. |
 | `pod` _[KubernetesPodSpec](#kubernetespodspec)_ | Pod defines the desired specification of pod. |
@@ -1328,6 +1329,21 @@ _Appears in:_
 | `maxReplicas` _integer_ | maxReplicas is the upper limit for the number of replicas to which the autoscaler can scale up. It cannot be less that minReplicas. |
 | `metrics` _[MetricSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#metricspec-v2-autoscaling) array_ | metrics contains the specifications for which to use to calculate the desired replica count (the maximum replica count across all metrics will be used). If left empty, it defaults to being based on CPU utilization with average on 80% usage. |
 | `behavior` _[HorizontalPodAutoscalerBehavior](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#horizontalpodautoscalerbehavior-v2-autoscaling)_ | behavior configures the scaling behavior of the target in both Up and Down directions (scaleUp and scaleDown fields respectively). If not set, the default HPAScalingRules for scale up and scale down are used. See k8s.io.autoscaling.v2.HorizontalPodAutoScalerBehavior. |
+
+
+#### KubernetesPatchSpec
+
+
+
+KubernetesPatchSpec defines how to perform the patch operation
+
+_Appears in:_
+- [KubernetesDeploymentSpec](#kubernetesdeploymentspec)
+
+| Field | Description |
+| --- | --- |
+| `type` _[MergeType](#mergetype)_ | Type is the type of merge operation to perform |
+| `object` _[JSON](#json)_ | Object contains the raw configuration for merged object |
 
 
 #### KubernetesPodSpec
@@ -1463,6 +1479,17 @@ LogLevel defines a log level for Envoy Gateway and EnvoyProxy system logs.
 _Appears in:_
 - [EnvoyGatewayLogging](#envoygatewaylogging)
 - [ProxyLogging](#proxylogging)
+
+
+
+#### MergeType
+
+_Underlying type:_ `string`
+
+MergeType defines the type of merge operation
+
+_Appears in:_
+- [KubernetesPatchSpec](#kubernetespatchspec)
 
 
 
