@@ -1,4 +1,113 @@
-#musthave
+#musthave for test
+
+#-------------CORS------------------
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: SecurityPolicy
+# metadata:
+#   name: cors-example
+#   namespace: sealos-system
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: Gateway
+#     name: eg
+#   cors:
+#     allowOrigins:
+#     # - "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+#     # - "https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+#     - "http://*.foo.com"
+#     allowMethods:
+#     - PUT
+#     - GET
+#     - POST
+#     - DELETE
+#     - PATCH
+#     - OPTIONS
+#     maxAge: 600s
+#     allowCredentials: true
+
+
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: SecurityPolicy
+# metadata:
+#   name: cors-example
+#   namespace: ns-vrpg
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: Gateway
+#     name: mfqjpuycbgjrtdww
+#   cors:
+#     allowOrigins:
+#     # - "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+#     # - "https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+#     - "http://*.foo.com"
+#     allowMethods:
+#     - PUT
+#     - GET
+#     - POST
+#     - DELETE
+#     - PATCH
+#     - OPTIONS
+#     maxAge: 600s
+#     allowCredentials: true
+
+
+#绑定二级域名的route  没问题
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: SecurityPolicy
+# metadata:
+#   name: cors-example
+#   namespace: ns-oehe
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: HTTPRoute
+#     name: bdkzlmibsivuiqav
+#   cors:
+#     allowOrigins:
+#     # - "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+#     # - "https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+#     - "http://*.foo.com"
+#     allowMethods:
+#     - PUT
+#     - GET
+#     - POST
+#     - DELETE
+#     - PATCH
+#     - OPTIONS
+#     maxAge: 600s
+#     allowCredentials: true
+
+#绑定自定义域名的route
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: cors-example
+  namespace: ns-vrpg
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: mfqjpuycbgjrtdww
+  cors:
+    allowOrigins:
+    # - "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+    # - "https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+    - "http://*.foo.com"
+    allowMethods:
+    - PUT
+    - GET
+    - POST
+    - DELETE
+    - PATCH
+    - OPTIONS
+    maxAge: 600s
+    allowCredentials: true
+
+
+
+#----------------
 
 # max_request_header的filter
 #apiVersion: gateway.envoyproxy.io/v1alpha1
@@ -22,29 +131,29 @@
 #        path: "/default_filter_chain/filters/0/typed_config/max_request_headers_kb"
 #        value: 8192
 #---
-# x-real-ip
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: EnvoyPatchPolicy
-metadata:
-  name: custom-x-real-ip-patch-policy
-  namespace: sealos-system
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: GatewayClass
-    name: eg
-    namespace: sealos-system
-  type: JSONPatch
-  jsonPatches:
-    - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
-      name: sealos-system/eg/http    #route configuration的名字，通常对应其listener的名字
-      operation:
-        op: "add"
-        path: "/request_headers_to_add"
-        value:
-          - header:
-              key: "x-real-ip"
-              value: "%REQ(X-ENVOY-EXTERNAL-ADDRESS)%"
+# x-real-ip  demo测试时需要手动增加X-ENVOY-EXTERNAL-ADDRESS这个头部，需在看
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: EnvoyPatchPolicy
+# metadata:
+#   name: custom-x-real-ip-patch-policy
+#   namespace: sealos-system
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: GatewayClass
+#     name: eg
+#     namespace: sealos-system
+#   type: JSONPatch
+#   jsonPatches:
+#     - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+#       name: sealos-system/eg/http    #route configuration的名字，通常对应其listener的名字
+#       operation:
+#         op: "add"
+#         path: "/request_headers_to_add"
+#         value:
+#           - header:
+#               key: "x-real-ip"
+#               value: "%REQ(X-ENVOY-EXTERNAL-ADDRESS)%"
 #---
 ## default compressor(L2)
 #apiVersion: gateway.envoyproxy.io/v1alpha1

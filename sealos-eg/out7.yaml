@@ -1,0 +1,395 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-cluster-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-vrpg
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfqjpuycbgjrtdww
+  namespace: ns-vrpg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfqjpuycbgjrtdww
+  template:
+    metadata:
+      labels:
+        app: mfqjpuycbgjrtdww
+    spec:
+      containers:
+      - image: nginx:1.25
+        name: nginx
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfqjpuycbgjrtdww
+  namespace: ns-vrpg
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: mfqjpuycbgjrtdww
+  type: ClusterIP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: mfqjpuycbgjrtdww
+  namespace: ns-vrpg
+spec:
+  gatewayClassName: eg
+  listeners:
+  - hostname: qccbahgo.qccbahgo
+    name: http
+    port: 80
+    protocol: HTTP
+  - hostname: qccbahgo.qccbahgo
+    name: https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - group: ""
+        kind: Secret
+        name: mfqjpuycbgjrtdww
+      mode: Terminate
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mfqjpuycbgjrtdww
+  namespace: ns-vrpg
+spec:
+  commonName: qccbahgo.qccbahgo
+  dnsNames:
+  - qccbahgo.qccbahgo
+  issuerRef:
+    kind: ClusterIssuer
+    name: selfsigned-cluster-issuer
+  secretName: mfqjpuycbgjrtdww
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mfqjpuycbgjrtdww
+  namespace: ns-vrpg
+spec:
+  hostnames:
+  - qccbahgo.qccbahgo
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: mfqjpuycbgjrtdww
+    namespace: ns-vrpg
+    sectionName: http
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: mfqjpuycbgjrtdww
+    namespace: ns-vrpg
+    sectionName: https
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: mfqjpuycbgjrtdww
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iaecywokgarhhugl
+  namespace: ns-vrpg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iaecywokgarhhugl
+  template:
+    metadata:
+      labels:
+        app: iaecywokgarhhugl
+    spec:
+      containers:
+      - image: nginx:1.25
+        name: nginx
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iaecywokgarhhugl
+  namespace: ns-vrpg
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: iaecywokgarhhugl
+  type: ClusterIP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: iaecywokgarhhugl
+  namespace: ns-vrpg
+spec:
+  gatewayClassName: eg
+  listeners:
+  - hostname: ncqijfxc.ncqijfxc
+    name: http
+    port: 80
+    protocol: HTTP
+  - hostname: ncqijfxc.ncqijfxc
+    name: https
+    port: 443
+    protocol: HTTPS
+    tls:
+      certificateRefs:
+      - group: ""
+        kind: Secret
+        name: iaecywokgarhhugl
+      mode: Terminate
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: iaecywokgarhhugl
+  namespace: ns-vrpg
+spec:
+  commonName: ncqijfxc.ncqijfxc
+  dnsNames:
+  - ncqijfxc.ncqijfxc
+  issuerRef:
+    kind: ClusterIssuer
+    name: selfsigned-cluster-issuer
+  secretName: iaecywokgarhhugl
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: iaecywokgarhhugl
+  namespace: ns-vrpg
+spec:
+  hostnames:
+  - ncqijfxc.ncqijfxc
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: iaecywokgarhhugl
+    namespace: ns-vrpg
+    sectionName: http
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: iaecywokgarhhugl
+    namespace: ns-vrpg
+    sectionName: https
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: iaecywokgarhhugl
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-oehe
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bdkzlmibsivuiqav
+  namespace: ns-oehe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bdkzlmibsivuiqav
+  template:
+    metadata:
+      labels:
+        app: bdkzlmibsivuiqav
+    spec:
+      containers:
+      - image: nginx:1.25
+        name: nginx
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bdkzlmibsivuiqav
+  namespace: ns-oehe
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: bdkzlmibsivuiqav
+  type: ClusterIP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bdkzlmibsivuiqav
+  namespace: ns-oehe
+spec:
+  hostnames:
+  - ntjxuedx.192.168.0.15.nip.io
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+    namespace: sealos-system
+    sectionName: http
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+    namespace: sealos-system
+    sectionName: https
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: bdkzlmibsivuiqav
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pvuycrafhtxkkjrt
+  namespace: ns-oehe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pvuycrafhtxkkjrt
+  template:
+    metadata:
+      labels:
+        app: pvuycrafhtxkkjrt
+    spec:
+      containers:
+      - image: nginx:1.25
+        name: nginx
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pvuycrafhtxkkjrt
+  namespace: ns-oehe
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: pvuycrafhtxkkjrt
+  type: ClusterIP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: pvuycrafhtxkkjrt
+  namespace: ns-oehe
+spec:
+  hostnames:
+  - ysnfdtpj.192.168.0.15.nip.io
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+    namespace: sealos-system
+    sectionName: http
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+    namespace: sealos-system
+    sectionName: https
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: pvuycrafhtxkkjrt
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+
