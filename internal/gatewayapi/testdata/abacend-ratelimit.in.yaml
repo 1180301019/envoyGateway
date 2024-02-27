@@ -1,0 +1,99 @@
+envoyproxy:
+  apiVersion: gateway.envoyproxy.io/v1alpha1
+  kind: EnvoyProxy
+  metadata:
+    namespace: envoy-gateway-system
+    name: test
+  spec:
+    mergeGateways: true
+gateways:
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: Gateway
+  metadata:
+    name: eg
+    namespace: sealos-system
+  spec:
+    gatewayClassName: envoy-gateway-class
+    listeners:
+      - hostname: "*.192.168.0.15.nip.io"
+        name: http
+        protocol: HTTP
+        port: 80
+        allowedRoutes:
+          namespaces:
+            from: All
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: Gateway
+  metadata:
+    name: mfqjpuycbgjrtdww
+    namespace: ns-vrpg
+  spec:
+    gatewayClassName: envoy-gateway-class
+    listeners:
+    - hostname: qccbahgo.qccbahgo
+      name: http
+      port: 80
+      protocol: HTTP
+httpRoutes:
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: HTTPRoute
+  metadata:
+    namespace: default
+    name: httproute-1
+  spec:
+    hostnames:
+    - gateway.envoyproxy.io
+    parentRefs:
+    - namespace: envoy-gateway
+      name: gateway-1
+      sectionName: http
+    rules:
+    - matches:
+      - path:
+          value: "/"
+      backendRefs:
+      - name: service-1
+        port: 8080
+# backendTrafficPolicies:
+# - apiVersion: gateway.envoyproxy.io/v1alpha1
+#   kind: BackendTrafficPolicy
+#   metadata:
+#     namespace: envoy-gateway
+#     name: policy-for-gateway
+#   spec:
+#     targetRef:
+#       group: gateway.networking.k8s.io
+#       kind: Gateway
+#       name: gateway-1
+#       namespace: envoy-gateway
+#     rateLimit:
+#       type: Local
+#       local:
+#         rules:
+#         - clientSelectors:
+#           - sourceCIDR: 
+#               value: 0.0.0.0/0
+#           limit:
+#             requests: 5
+#             unit: Hour
+#         - clientSelectors:
+#           - sourceCIDR: 
+#               value: 192.168.0.54/32
+#               # type: Distinct    #D必须大写
+#           limit:
+#             requests: 3
+#             unit: Hour
+# - apiVersion: gateway.envoyproxy.io/v1alpha1
+#   kind: BackendTrafficPolicy
+#   metadata:
+#     name: circuitbreaker
+#     namespace: envoy-gateway
+#   spec:
+#     targetRef:
+#       group: gateway.networking.k8s.io
+#       kind: Gateway
+#       name: gateway-1
+#       namespace: envoy-gateway
+#     circuitBreaker:
+#       maxPendingRequests: 0
+#       maxParallelRequests: 10

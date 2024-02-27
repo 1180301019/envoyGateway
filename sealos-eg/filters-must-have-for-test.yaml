@@ -1,6 +1,7 @@
 #musthave for test
 
 #-------------CORS------------------
+# apply to system gateway, 功能可用但存在隔离性问题，等待社区修复
 # apiVersion: gateway.envoyproxy.io/v1alpha1
 # kind: SecurityPolicy
 # metadata:
@@ -26,7 +27,7 @@
 #     maxAge: 600s
 #     allowCredentials: true
 
-
+# apply to custom gateway, 功能可用但存在隔离性问题，等待社区修复
 # apiVersion: gateway.envoyproxy.io/v1alpha1
 # kind: SecurityPolicy
 # metadata:
@@ -53,7 +54,7 @@
 #     allowCredentials: true
 
 
-#绑定二级域名的route  没问题
+# apply to 二级域名的route  功能可用，隔离性正常
 # apiVersion: gateway.envoyproxy.io/v1alpha1
 # kind: SecurityPolicy
 # metadata:
@@ -79,58 +80,148 @@
 #     maxAge: 600s
 #     allowCredentials: true
 
-#绑定自定义域名的route
+# apply to 自定义域名的route  功能可用，隔离性正常
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: SecurityPolicy
+# metadata:
+#   name: cors-example
+#   namespace: ns-vrpg
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: HTTPRoute
+#     name: mfqjpuycbgjrtdww
+#   cors:
+#     allowOrigins:
+#     # - "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+#     # - "https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+#     - "http://*.foo.com"
+#     allowMethods:
+#     - PUT
+#     - GET
+#     - POST
+#     - DELETE
+#     - PATCH
+#     - OPTIONS
+#     maxAge: 600s
+#     allowCredentials: true
+
+
+
+#----------------ratelimit-------------------------
+# apply to gateway  功能正常，隔离性有问题
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: BackendTrafficPolicy 
+# metadata:
+#   name: ratelimit-policy
+#   namespace: sealos-system
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: Gateway
+#     name: eg
+#     namespace: sealos-system
+#   rateLimit:
+#     type: Local
+#     local:
+#       rules:
+#       - clientSelectors:
+#         - sourceCIDR: 
+#             value: 0.0.0.0/0
+#             # type: Distinct    #D必须大写
+#         limit:
+#           requests: 5
+#           unit: Hour
+#       # - clientSelectors:
+#       #   - sourceCIDR: 
+#       #       value: 192.168.0.54/32
+#       #       # type: Distinct    #D必须大写
+#       #   limit:
+#       #     requests: 99999
+#       #     unit: Second
+
+
+#apply to rooute  功能正常，隔离性正常
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: BackendTrafficPolicy 
+# metadata:
+#   name: ratelimit-policy
+#   namespace: ns-oehe
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: HTTPRoute
+#     name: bdkzlmibsivuiqav
+#     namespace: ns-oehe
+#   rateLimit:
+#     type: Local
+#     local:
+#       rules:
+#       # - clientSelectors:
+#       #   - sourceCIDR: 
+#       #       value: 0.0.0.0/0
+#       #       # type: Distinct    #D必须大写
+#       - limit:
+#           requests: 3
+#           unit: Hour
+
+#-------------------------circuitbreaker-----------------------
+# apply to gateway  功能不太正常
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: BackendTrafficPolicy
+# metadata:
+#   name: circuitbreaker
+#   namespace: sealos-system
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: Gateway
+#     name: eg
+#     namespace: sealos-system
+#   circuitBreaker:
+#     maxPendingRequests: 0
+#     maxParallelRequests: 10
+
+# apply to httproute  功能正常，隔离性正常
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: BackendTrafficPolicy
+# metadata:
+#   name: circuitbreaker
+#   namespace: ns-oehe
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: HTTPRoute
+#     name: bdkzlmibsivuiqav
+#     namespace: ns-oehe
+#   circuitBreaker:
+#     maxPendingRequests: 0
+#     maxParallelRequests: 10
+
+
+
+#---------------------------max_request_header---------------------------
 apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: SecurityPolicy
+kind: EnvoyPatchPolicy
 metadata:
-  name: cors-example
-  namespace: ns-vrpg
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: mfqjpuycbgjrtdww
-  cors:
-    allowOrigins:
-    # - "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
-    # - "https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
-    - "http://*.foo.com"
-    allowMethods:
-    - PUT
-    - GET
-    - POST
-    - DELETE
-    - PATCH
-    - OPTIONS
-    maxAge: 600s
-    allowCredentials: true
+ name: custom-maxheader-patch-policy
+ namespace: sealos-system
+spec: 
+ targetRef:
+   group: gateway.networking.k8s.io
+   kind: GatewayClass
+   name: eg
+ type: JSONPatch
+ jsonPatches:
+   - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
+     # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
+     name: "sealos-system/eg/http"
+     operation:
+       op: "add"
+       path: "/default_filter_chain/filters/0/typed_config/max_request_headers_kb"
+       value: 1
 
-
-
-#----------------
-
-# max_request_header的filter
-#apiVersion: gateway.envoyproxy.io/v1alpha1
-#kind: EnvoyPatchPolicy
-#metadata:
-#  name: custom-maxheader-patch-policy
-#  namespace: sealos-system
-#spec:
-#  targetRef:
-#    group: gateway.networking.k8s.io
-#    kind: GatewayClass
-#    name: eg
-#    namespace: sealos-system
-#  type: JSONPatch
-#  jsonPatches:
-#    - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
-#      # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
-#      name: "sealos-system/eg/http"
-#      operation:
-#        op: "add"
-#        path: "/default_filter_chain/filters/0/typed_config/max_request_headers_kb"
-#        value: 8192
-#---
+#----------------------------------
 # x-real-ip  demo测试时需要手动增加X-ENVOY-EXTERNAL-ADDRESS这个头部，需在看
 # apiVersion: gateway.envoyproxy.io/v1alpha1
 # kind: EnvoyPatchPolicy
@@ -255,19 +346,3 @@ spec:
 #            remove:
 #              - "X-Xss-Protection"
 #
-#---
-##Circuit Breakers
-#apiVersion: gateway.envoyproxy.io/v1alpha1
-#kind: BackendTrafficPolicy
-#metadata:
-#  name: circuitbreaker-for-route
-#spec:
-#  targetRef:
-#    group: gateway.networking.k8s.io
-#    kind: Gateway
-#    name: eg
-#    namespace: default
-#  circuitBreaker:
-#    maxConnections: 1024
-#    maxPendingRequests: 1024
-#    maxParallelRequests: 1024

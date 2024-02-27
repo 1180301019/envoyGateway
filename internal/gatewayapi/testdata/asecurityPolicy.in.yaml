@@ -1,0 +1,144 @@
+envoyproxy:
+  apiVersion: gateway.envoyproxy.io/v1alpha1
+  kind: EnvoyProxy
+  metadata:
+    namespace: envoy-gateway-system
+    name: test
+  spec:
+    mergeGateways: true
+gateways:
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: Gateway
+  metadata:
+    name: eg
+    namespace: sealos-system
+  spec:
+    gatewayClassName: envoy-gateway-class
+    listeners:
+      - name: http
+        protocol: HTTP
+        port: 80
+        allowedRoutes:
+          namespaces:
+            from: All
+      - name: https
+        protocol: HTTPS
+        port: 443
+        allowedRoutes:
+          namespaces:
+            from: All
+        tls:
+          mode: Terminate
+          certificateRefs:
+            - kind: Secret
+              group: ""
+              name: wildcard-cert
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: Gateway
+  metadata:
+    name: mfqjpuycbgjrtdww
+    namespace: ns-vrpg
+  spec:
+    gatewayClassName: envoy-gateway-class
+    listeners:
+    - hostname: qccbahgo.qccbahgo
+      name: http
+      port: 80
+      protocol: HTTP
+    - hostname: qccbahgo.qccbahgo
+      name: https
+      port: 443
+      protocol: HTTPS
+      tls:
+        certificateRefs:
+        - group: ""
+          kind: Secret
+          name: mfqjpuycbgjrtdww
+        mode: Terminate
+httpRoutes:
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: HTTPRoute
+  metadata:
+    name: bdkzlmibsivuiqav
+    namespace: ns-oehe
+  spec:
+    hostnames:
+    - ntjxuedx.192.168.0.15.nip.io
+    parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: eg
+      namespace: sealos-system
+      sectionName: http
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: eg
+      namespace: sealos-system
+      sectionName: https
+    rules:
+    - backendRefs:
+      - group: ""
+        kind: Service
+        name: bdkzlmibsivuiqav
+        port: 80
+        weight: 1
+      matches:
+      - path:
+          type: PathPrefix
+          value: /
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: HTTPRoute
+  metadata:
+    name: mfqjpuycbgjrtdww
+    namespace: ns-vrpg
+  spec:
+    hostnames:
+    - qccbahgo.qccbahgo
+    parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: mfqjpuycbgjrtdww
+      namespace: ns-vrpg
+      sectionName: http
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: mfqjpuycbgjrtdww
+      namespace: ns-vrpg
+      sectionName: https
+    rules:
+    - backendRefs:
+      - group: ""
+        kind: Service
+        name: mfqjpuycbgjrtdww
+        port: 80
+        weight: 1
+      matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+securityPolicies:
+- apiVersion: gateway.envoyproxy.io/v1alpha1
+  kind: SecurityPolicy
+  metadata:
+    name: cors-example
+    namespace: sealos-system
+  spec:
+    targetRef:
+      group: gateway.networking.k8s.io
+      kind: Gateway
+      name: eg
+    cors:
+      allowOrigins:
+      # - "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+      # - "https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+      - "http://*.foo.com"
+      allowMethods:
+      - PUT
+      - GET
+      - POST
+      - DELETE
+      - PATCH
+      - OPTIONS
+      maxAge: 600s
+      allowCredentials: true

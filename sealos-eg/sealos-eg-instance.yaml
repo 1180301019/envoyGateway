@@ -69,13 +69,15 @@ metadata:
 spec:
   gatewayClassName: eg
   listeners:
-    - name: http
+    - hostname: "*.192.168.0.15.nip.io"
+      name: http
       protocol: HTTP
       port: 80
       allowedRoutes:
         namespaces:
           from: All
-    - name: https
+    - hostname: "*.192.168.0.15.nip.io"
+      name: https
       protocol: HTTPS
       port: 443
       allowedRoutes:
@@ -139,7 +141,7 @@ spec:
       sectionName: http
       namespace: sealos-system
   hostnames:
-    - "192.168.0.15.nip.io"
+    - "desktop.192.168.0.15.nip.io"
   rules:
     - backendRefs:
         - group: ""
