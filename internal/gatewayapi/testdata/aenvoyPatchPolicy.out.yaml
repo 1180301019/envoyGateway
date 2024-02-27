@@ -1,0 +1,134 @@
+gateways:
+- apiVersion: gateway.networking.k8s.io/v1
+  kind: Gateway
+  metadata:
+    creationTimestamp: null
+    name: gateway-1
+    namespace: envoy-gateway-system
+  spec:
+    gatewayClassName: envoy-gateway-class
+    listeners:
+    - allowedRoutes:
+        namespaces:
+          from: All
+      name: http
+      port: 80
+      protocol: HTTP
+  status:
+    listeners:
+    - attachedRoutes: 0
+      conditions:
+      - lastTransitionTime: null
+        message: Sending translated listener configuration to the data plane
+        reason: Programmed
+        status: "True"
+        type: Programmed
+      - lastTransitionTime: null
+        message: Listener has been successfully translated
+        reason: Accepted
+        status: "True"
+        type: Accepted
+      - lastTransitionTime: null
+        message: Listener references have been resolved
+        reason: ResolvedRefs
+        status: "True"
+        type: ResolvedRefs
+      name: http
+      supportedKinds:
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+      - group: gateway.networking.k8s.io
+        kind: GRPCRoute
+infraIR:
+  envoy-gateway-system/gateway-1:
+    proxy:
+      listeners:
+      - address: null
+        name: envoy-gateway-system/gateway-1/http
+        ports:
+        - containerPort: 10080
+          name: http
+          protocol: HTTP
+          servicePort: 80
+      metadata:
+        labels:
+          gateway.envoyproxy.io/owning-gateway-name: gateway-1
+          gateway.envoyproxy.io/owning-gateway-namespace: envoy-gateway-system
+      name: envoy-gateway-system/gateway-1
+xdsIR:
+  envoy-gateway-system/gateway-1:
+    accessLog:
+      text:
+      - path: /dev/stdout
+    envoyPatchPolicies:
+    - TargetHttpRoute: ""
+      jsonPatches:
+      - name: envoy-gateway-gateway-1-http
+        operation:
+          op: replace
+          path: /per_connection_buffer_limit_bytes
+          value: "1024"
+        type: type.googleapis.com/envoy.config.listener.v3.Listener
+      name: edit-conn-buffer-bytes-1
+      namespace: envoy-gateway-system
+      status:
+        conditions:
+        - lastTransitionTime: null
+          message: EnvoyPatchPolicy has been accepted.--------dev--------
+          reason: Accepted
+          status: "True"
+          type: Accepted
+    - TargetHttpRoute: httproute-1
+      jsonPatches:
+      - name: first-listener
+        operation:
+          op: add
+          path: /typed_per_filter_config
+          value:
+            envoy_filters_http_cors:
+              '@type': type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+              allow_credentials: true
+        type: type.googleapis.com/envoy.config.route.v3.RouteConfiguration
+      name: edit-conn-buffer-bytes-2
+      namespace: default
+      status:
+        conditions:
+        - lastTransitionTime: null
+          message: EnvoyPatchPolicy has been accepted.--------dev--------
+          reason: Accepted
+          status: "True"
+          type: Accepted
+    - TargetHttpRoute: ""
+      name: edit-conn-buffer-bytes
+      namespace: envoy-gateway-2
+      status:
+        conditions:
+        - lastTransitionTime: null
+          message: TargetRef.Group:gateway.networking.k8s.io TargetRef.Kind:GatewayClass,
+            only TargetRef.Group:gateway.networking.k8s.io and TargetRef.Kind:Gateway,
+            HTTPRoute is supported.
+          reason: Invalid
+          status: "False"
+          type: Accepted
+    - TargetHttpRoute: ""
+      name: edit-conn-buffer-bytes-1
+      namespace: envoy-gateway-system
+      status:
+        conditions:
+        - lastTransitionTime: null
+          message: TargetRef.Group:gateway.networking.k8s.io TargetRef.Kind:GRPCRoute,
+            only TargetRef.Group:gateway.networking.k8s.io and TargetRef.Kind:Gateway,
+            HTTPRoute is supported.
+          reason: Invalid
+          status: "False"
+          type: Accepted
+    http:
+    - address: 0.0.0.0
+      hostnames:
+      - '*'
+      isHTTP2: false
+      name: envoy-gateway-system/gateway-1/http
+      path:
+        escapedSlashesAction: UnescapeAndRedirect
+        mergeSlashes: true
+      port: 10080
