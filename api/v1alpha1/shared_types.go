@@ -20,7 +20,7 @@ const (
 	// DefaultDeploymentMemoryResourceRequests for deployment memory resource
 	DefaultDeploymentMemoryResourceRequests = "512Mi"
 	// DefaultEnvoyProxyImage is the default image used by envoyproxy
-	DefaultEnvoyProxyImage = "envoyproxy/envoy:distroless-dev"
+	DefaultEnvoyProxyImage = "envoyproxy/envoy-dev:latest"
 	// DefaultRateLimitImage is the default image used by ratelimit.
 	DefaultRateLimitImage = "envoyproxy/ratelimit:master"
 	// HTTPProtocol is the common-used http protocol.
