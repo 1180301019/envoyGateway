@@ -24,7 +24,7 @@ spec:
       envoyDeployment:
         patch:
           type: StrategicMerge
-          object:
+          value:
             spec:
               template: 
                 spec: 
