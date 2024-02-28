@@ -1,0 +1,229 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: eg
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: custom-proxy-config
+    namespace: envoy-gateway-system
+
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: custom-proxy-config
+  namespace: envoy-gateway-system
+spec:
+  mergeGateways: true 
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sealos-system
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: eg
+  namespace: sealos-system
+spec:
+  gatewayClassName: eg
+  listeners:
+    - hostname: "*.192.168.0.15.nip.io"
+      name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-oehe
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bdkzlmibsivuiqav
+  namespace: ns-oehe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bdkzlmibsivuiqav
+  template:
+    metadata:
+      labels:
+        app: bdkzlmibsivuiqav
+    spec:
+      containers:
+      - image: nginx:1.25
+        name: nginx
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bdkzlmibsivuiqav
+  namespace: ns-oehe
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: bdkzlmibsivuiqav
+  type: ClusterIP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: bdkzlmibsivuiqav
+  namespace: ns-oehe
+spec:
+  hostnames:
+  - ntjxuedx.192.168.0.15.nip.io
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: eg
+    namespace: sealos-system
+    sectionName: http
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: bdkzlmibsivuiqav
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-vrpg
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfqjpuycbgjrtdww
+  namespace: ns-vrpg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mfqjpuycbgjrtdww
+  template:
+    metadata:
+      labels:
+        app: mfqjpuycbgjrtdww
+    spec:
+      containers:
+      - image: nginx:1.25
+        name: nginx
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfqjpuycbgjrtdww
+  namespace: ns-vrpg
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: mfqjpuycbgjrtdww
+  type: ClusterIP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: mfqjpuycbgjrtdww
+  namespace: ns-vrpg
+spec:
+  gatewayClassName: eg
+  listeners:
+  - hostname: qccbahgo.qccbahgo
+    name: http
+    port: 80
+    protocol: HTTP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mfqjpuycbgjrtdww
+  namespace: ns-vrpg
+spec:
+  hostnames:
+  - qccbahgo.qccbahgo
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: mfqjpuycbgjrtdww
+    namespace: ns-vrpg
+    sectionName: http
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: mfqjpuycbgjrtdww
+      port: 80
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /
+# ---
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: SecurityPolicy
+# metadata:
+#   name: cors-example
+#   namespace: sealos-system
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: Gateway
+#     name: eg
+#   cors:
+#     allowOrigins:
+#     - "http://*.foo.com"
+#     allowMethods:
+#     - PUT
+#     - GET
+#     - POST
+#     - DELETE
+#     - PATCH
+#     - OPTIONS
+#     maxAge: 600s
+#     allowCredentials: true

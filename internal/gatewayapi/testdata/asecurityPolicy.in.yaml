@@ -122,12 +122,12 @@ securityPolicies:
   kind: SecurityPolicy
   metadata:
     name: cors-example
-    namespace: sealos-system
+    namespace: ns-vrpg
   spec:
     targetRef:
       group: gateway.networking.k8s.io
       kind: Gateway
-      name: eg
+      name: mfqjpuycbgjrtdww
     cors:
       allowOrigins:
       # - "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"

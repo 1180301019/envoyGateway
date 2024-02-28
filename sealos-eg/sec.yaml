@@ -1,0 +1,23 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: cors-example
+  namespace: ns-vrpg
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: mfqjpuycbgjrtdww
+    namespace: ns-vrpg
+  cors:
+    allowOrigins:
+    - "http://*.foo.com"
+    allowMethods:
+    - PUT
+    - GET
+    - POST
+    - DELETE
+    - PATCH
+    - OPTIONS
+    maxAge: 600s
+    allowCredentials: true
