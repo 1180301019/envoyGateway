@@ -3,7 +3,6 @@
       address: 0.0.0.0
       portValue: 10443
       protocol: UDP
-  drainType: MODIFY_ONLY
   filterChains:
   - filters:
     - name: envoy.filters.network.http_connection_manager
@@ -54,7 +53,6 @@
     socketAddress:
       address: 0.0.0.0
       portValue: 10443
-  drainType: MODIFY_ONLY
   filterChains:
   - filters:
     - name: envoy.filters.network.http_connection_manager

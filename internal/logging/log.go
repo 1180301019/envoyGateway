@@ -6,7 +6,6 @@
 package logging
 
 import (
-	"io"
 	"os"
 
 	"github.com/go-logr/logr"
@@ -24,7 +23,7 @@ type Logger struct {
 }
 
 func NewLogger(logging *v1alpha1.EnvoyGatewayLogging) Logger {
-	logger := initZapLogger(os.Stdout, logging, logging.Level[v1alpha1.LogComponentGatewayDefault])
+	logger := initZapLogger(logging, logging.Level[v1alpha1.LogComponentGatewayDefault])
 
 	return Logger{
 		Logger:        zapr.NewLogger(logger),
@@ -33,25 +32,9 @@ func NewLogger(logging *v1alpha1.EnvoyGatewayLogging) Logger {
 	}
 }
 
-func FileLogger(file string, name string, level v1alpha1.LogLevel) Logger {
-	writer, err := os.OpenFile(file, os.O_WRONLY, 0666)
-	if err != nil {
-		panic(err)
-	}
-
-	logging := v1alpha1.DefaultEnvoyGatewayLogging()
-	logger := initZapLogger(writer, logging, level)
-
-	return Logger{
-		Logger:        zapr.NewLogger(logger).WithName(name),
-		logging:       logging,
-		sugaredLogger: logger.Sugar(),
-	}
-}
-
 func DefaultLogger(level v1alpha1.LogLevel) Logger {
 	logging := v1alpha1.DefaultEnvoyGatewayLogging()
-	logger := initZapLogger(os.Stdout, logging, level)
+	logger := initZapLogger(logging, level)
 
 	return Logger{
 		Logger:        zapr.NewLogger(logger),
@@ -67,7 +50,7 @@ func DefaultLogger(level v1alpha1.LogLevel) Logger {
 // more information).
 func (l Logger) WithName(name string) Logger {
 	logLevel := l.logging.Level[v1alpha1.EnvoyGatewayLogComponent(name)]
-	logger := initZapLogger(os.Stdout, l.logging, logLevel)
+	logger := initZapLogger(l.logging, logLevel)
 
 	return Logger{
 		Logger:        zapr.NewLogger(logger).WithName(name),
@@ -105,9 +88,9 @@ func (l Logger) Sugar() *zap.SugaredLogger {
 	return l.sugaredLogger
 }
 
-func initZapLogger(w io.Writer, logging *v1alpha1.EnvoyGatewayLogging, level v1alpha1.LogLevel) *zap.Logger {
+func initZapLogger(logging *v1alpha1.EnvoyGatewayLogging, level v1alpha1.LogLevel) *zap.Logger {
 	parseLevel, _ := zapcore.ParseLevel(string(logging.DefaultEnvoyGatewayLoggingLevel(level)))
-	core := zapcore.NewCore(zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()), zapcore.AddSync(w), zap.NewAtomicLevelAt(parseLevel))
+	core := zapcore.NewCore(zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig()), zapcore.AddSync(os.Stdout), zap.NewAtomicLevelAt(parseLevel))
 
 	return zap.New(core, zap.AddCaller())
 }

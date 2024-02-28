@@ -452,7 +452,6 @@
                       }
                     ]
                   },
-                  "drainType": "MODIFY_ONLY",
                   "name": "envoy-gateway-system/eg/http",
                   "perConnectionBufferLimitBytes": 32768
                 }
