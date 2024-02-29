@@ -81,6 +81,7 @@ metadata:
   name: bdkzlmibsivuiqav
   namespace: ns-oehe
 spec:
+  clusterIP: "1.1.1.1"
   ports:
   - name: http
     port: 80
@@ -157,6 +158,7 @@ metadata:
   name: mfqjpuycbgjrtdww
   namespace: ns-vrpg
 spec:
+  clusterIP: "1.1.1.1"
   ports:
   - name: http
     port: 80
@@ -215,6 +217,29 @@ spec:
 #     group: gateway.networking.k8s.io
 #     kind: Gateway
 #     name: eg
+#   cors:
+#     allowOrigins:
+#     - "http://*.foo.com"
+#     allowMethods:
+#     - PUT
+#     - GET
+#     - POST
+#     - DELETE
+#     - PATCH
+#     - OPTIONS
+#     maxAge: 600s
+#     allowCredentials: true
+
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: SecurityPolicy
+# metadata:
+#   name: cors-example
+#   namespace: ns-vrpg
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: Gateway
+#     name: mfqjpuycbgjrtdww
 #   cors:
 #     allowOrigins:
 #     - "http://*.foo.com"
