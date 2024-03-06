@@ -182,7 +182,7 @@
 #     maxPendingRequests: 0
 #     maxParallelRequests: 10
 
-# apply to httproute  功能正常，隔离性正常
+# apply to httproute  功能不太正常，隔离性正常
 # apiVersion: gateway.envoyproxy.io/v1alpha1
 # kind: BackendTrafficPolicy
 # metadata:
@@ -201,28 +201,102 @@
 
 
 #---------------------------max_request_header---------------------------
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: EnvoyPatchPolicy
-metadata:
- name: custom-maxheader-patch-policy
- namespace: sealos-system
-spec: 
- targetRef:
-   group: gateway.networking.k8s.io
-   kind: GatewayClass
-   name: eg
- type: JSONPatch
- jsonPatches:
-   - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
-     # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
-     name: "sealos-system/eg/http"
-     operation:
-       op: "add"
-       path: "/default_filter_chain/filters/0/typed_config/max_request_headers_kb"
-       value: 1
+# 可以生效但是存在隔离性问题，mergeGateway的情况下会影响所有route
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: EnvoyPatchPolicy
+# metadata:
+#  name: custom-maxheader-patch-policy
+#  namespace: sealos-system
+# spec: 
+#  targetRef:
+#    group: gateway.networking.k8s.io
+#    kind: GatewayClass
+#    name: eg
+#  type: JSONPatch
+#  jsonPatches:
+#    - type: "type.googleapis.com/envoy.config.listener.v3.Listener"
+#      # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
+#      name: "sealos-system/eg/http"
+#      operation:
+#        op: "add"
+#        path: "/default_filter_chain/filters/0/typed_config/max_request_headers_kb"
+#        value: 1
 
-#----------------------------------
-# x-real-ip  demo测试时需要手动增加X-ENVOY-EXTERNAL-ADDRESS这个头部，需在看
+#------------------------------csp----------------------------
+##csp 用户自行按需配置
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: HTTPRoute
+# metadata:
+#  name: sealos-desktop
+#  namespace: sealos
+# spec:
+#  parentRefs:
+#    - group: gateway.networking.k8s.io
+#      kind: Gateway
+#      name: eg
+#      sectionName: https
+#      namespace: sealos-system
+#    - group: gateway.networking.k8s.io
+#      kind: Gateway
+#      name: eg
+#      sectionName: http
+#      namespace: sealos-system
+#  hostnames:
+#    - "desktop.192.168.0.15.nip.io"
+#  rules:
+#    - backendRefs:
+#        - group: ""
+#          kind: Service
+#          name: desktop-frontend
+#          port: 3000
+#          weight: 1
+#      matches:
+#        - path:
+#            type: PathPrefix
+#            value: /get
+#      filters:
+#        - type: ResponseHeaderModifier
+#          responseHeaderModifier:
+#            add:
+#              - name: "X-Xss-Protection"
+#                value: "1; mode=block"
+#              - name: "Content-Security-Policy"
+#                value: "test"
+#            remove:
+#              - "content-length"
+#            set:
+#              - name: "content-type"
+#                value: "test"
+
+# csp  同listener一样，也会有隔离性问题
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: EnvoyPatchPolicy
+# metadata:
+#   name: custom-csp-patch-policy
+#   namespace: sealos-system
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: GatewayClass
+#     name: eg
+#     namespace: sealos-system
+#   type: JSONPatch
+#   jsonPatches:
+#     - type: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+#       name: sealos-system/eg/http    #route configuration的名字，通常对应其listener的名字
+#       operation:
+#         op: "add"
+#         path: "/response_headers_to_add"
+#         value:
+#           - header:
+#               key: "X-Xss-Protection"
+#               value: "1; mode=block"
+#           - header:
+#               key: "Content-Security-Policy"
+#               value: "test"
+
+#----------------------------------x-real-ip--------------------------------------------
+# x-real-ip  demo测试时需要手动增加X-ENVOY-EXTERNAL-ADDRESS这个头部
 # apiVersion: gateway.envoyproxy.io/v1alpha1
 # kind: EnvoyPatchPolicy
 # metadata:
@@ -240,19 +314,20 @@ spec:
 #       name: sealos-system/eg/http    #route configuration的名字，通常对应其listener的名字
 #       operation:
 #         op: "add"
-#         path: "/request_headers_to_add"
+#         path: "/response_headers_to_add"
 #         value:
 #           - header:
 #               key: "x-real-ip"
 #               value: "%REQ(X-ENVOY-EXTERNAL-ADDRESS)%"
-#---
-## default compressor(L2)
-#apiVersion: gateway.envoyproxy.io/v1alpha1
-#kind: EnvoyPatchPolicy
-#metadata:
+
+#-----------------------------------compressor--------------------------------------------
+## default compressor(L2) 有隔离性问题
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: EnvoyPatchPolicy
+# metadata:
 #  name: custom-compressor-patch-policy
 #  namespace: sealos-system
-#spec:
+# spec:
 #  targetRef:
 #    group: gateway.networking.k8s.io
 #    kind: GatewayClass
@@ -301,48 +376,4 @@ spec:
 #                  - font/eot
 #                min_content_length: 1024
 #              disable_on_etag_header: false
-#---
-##csp 用户自行按需配置
-#apiVersion: gateway.networking.k8s.io/v1
-#kind: HTTPRoute
-#metadata:
-#  name: sealos-desktop
-#  namespace: sealos
-#spec:
-#  parentRefs:
-#    - group: gateway.networking.k8s.io
-#      kind: Gateway
-#      name: eg
-#      sectionName: https
-#      namespace: sealos-system
-#    - group: gateway.networking.k8s.io
-#      kind: Gateway
-#      name: eg
-#      sectionName: http
-#      namespace: sealos-system
-#  hostnames:
-#    - "192.168.0.15.nip.io"
-#  rules:
-#    - backendRefs:
-#        - group: ""
-#          kind: Service
-#          name: desktop-frontend
-#          port: 3000
-#          weight: 1
-#      matches:
-#        - path:
-#            type: PathPrefix
-#            value: /get
-#      filters:
-#        - type: ResponseHeaderModifier
-#          responseHeaderModifier:
-#            add:
-#              - name: "X-Xss-Protection"
-#                value: "1; mode=block"
-#              - name: "Content-Security-Policy"
-#                value: "test"
-#        - type: ResponseHeaderModifier
-#          responseHeaderModifier:
-#            remove:
-#              - "X-Xss-Protection"
-#
+
