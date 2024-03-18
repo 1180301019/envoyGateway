@@ -127,7 +127,8 @@ func (t *Translator) processHTTPListenerXdsTranslation(
 		var xdsRouteCfg *routev3.RouteConfiguration
 
 		// Search for an existing listener, if it does not exist, create one.
-		xdsListener := findXdsListenerByHostPort(tCtx, httpListener.Address, httpListener.Port, corev3.SocketAddress_TCP)
+		xdsListener := findXdsListenerByHostPortName(tCtx, httpListener.Address, httpListener.Port,
+			corev3.SocketAddress_TCP, httpListener.Name)
 		var quicXDSListener *listenerv3.Listener
 		enabledHTTP3 := httpListener.HTTP3 != nil
 		if xdsListener == nil {
@@ -409,6 +410,25 @@ func processUDPListenerXdsTranslation(tCtx *types.ResourceVersionTable, udpListe
 		}
 	}
 	return errs
+}
+
+// findXdsListenerByHostPort finds a xds listener with the same address, port and protocol, and returns nil if there is no match.
+func findXdsListenerByHostPortName(tCtx *types.ResourceVersionTable, address string, port uint32,
+	protocol corev3.SocketAddress_Protocol, listenerName string) *listenerv3.Listener {
+	if tCtx == nil || tCtx.XdsResources == nil || tCtx.XdsResources[resourcev3.ListenerType] == nil {
+		return nil
+	}
+
+	for _, r := range tCtx.XdsResources[resourcev3.ListenerType] {
+		listener := r.(*listenerv3.Listener)
+		addr := listener.GetAddress()
+		if addr.GetSocketAddress().GetPortValue() == port && addr.GetSocketAddress().Address == address && addr.
+			GetSocketAddress().Protocol == protocol && listener.Name == listenerName {
+			return listener
+		}
+	}
+
+	return nil
 }
 
 // findXdsListenerByHostPort finds a xds listener with the same address, port and protocol, and returns nil if there is no match.
